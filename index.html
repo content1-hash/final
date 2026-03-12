@@ -63,4 +63,797 @@
     }
 
     .col-4 { grid-column: span 4; }
+    .col-6 { grid-column: span 6; }
+    .col-8 { grid-column: span 8; }
+    .col-12 { grid-column: span 12; }
+
+    @media (max-width: 900px) {
+      .col-4, .col-6, .col-8, .col-12 { grid-column: span 12; }
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input, select, button {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      padding: 12px 14px;
+      font-size: 15px;
+    }
+
+    input, select {
+      background: #0b1220;
+      color: var(--text);
+    }
+
+    button {
+      cursor: pointer;
+      color: var(--white);
+      border: none;
+      font-weight: 700;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .btn-green { background: var(--primary); }
+    .btn-red { background: var(--danger); }
+    .btn-yellow { background: var(--warn); color: #111827; }
+    .btn-blue { background: var(--info); }
+    .btn-gray { background: #475569; }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 650px) {
+      .actions { grid-template-columns: 1fr; }
+    }
+
+    .muted { color: var(--muted); }
+    .hidden { display: none !important; }
+
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(56, 189, 248, 0.15);
+      color: #7dd3fc;
+      border: 1px solid rgba(125, 211, 252, 0.2);
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    .status {
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(30, 41, 59, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      margin-bottom: 14px;
+    }
+
+    .message {
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      font-weight: 700;
+    }
+    .message.success { background: rgba(34, 197, 94, 0.16); color: #86efac; }
+    .message.error { background: rgba(239, 68, 68, 0.16); color: #fca5a5; }
+    .message.info { background: rgba(56, 189, 248, 0.16); color: #7dd3fc; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    th, td {
+      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+      text-align: left;
+      padding: 10px 8px;
+      vertical-align: top;
+    }
+    th { color: #cbd5e1; }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      margin-top: 26px;
+      font-size: 13px;
+    }
+
+    .small { font-size: 13px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .row > div { flex: 1; min-width: 180px; }
+    .right { text-align: right; }
+    .mono { font-family: Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div>
+        <h1>Team Attendance Platform</h1>
+        <p class="muted">Clock in, breaks, clock out, and monthly records.</p>
+      </div>
+      <div id="authBadge" class="pill">Connecting...</div>
+    </div>
+
+    <div id="messageBox" class="hidden"></div>
+
+    <div class="grid">
+      <div class="col-4">
+        <div class="card">
+          <h2>Member Login</h2>
+          <label for="memberSelect">Select member</label>
+          <select id="memberSelect"></select>
+
+          <div style="height: 12px;"></div>
+          <label for="memberPin">Enter PIN</label>
+          <input id="memberPin" type="password" maxlength="10" placeholder="Enter PIN" />
+
+          <div style="height: 12px;"></div>
+          <button id="loginBtn" class="btn-blue">Login</button>
+
+          <div style="height: 12px;"></div>
+          <button id="logoutBtn" class="btn-gray hidden">Logout</button>
+
+          <div style="height: 14px;"></div>
+          <div class="small muted">
+            Dummy members included for now.<br>
+            Admin accounts are already prepared in SQL setup.
+          </div>
+        </div>
+      </div>
+
+      <div class="col-8">
+        <div class="card">
+          <h2>Today Dashboard</h2>
+          <div id="currentUserBox" class="status">No member logged in yet.</div>
+
+          <div id="memberArea" class="hidden">
+            <div class="actions">
+              <button id="clockInBtn" class="btn-green">Clock In</button>
+              <button id="clockOutBtn" class="btn-red">Clock Out</button>
+              <button id="firstBreakBtn" class="btn-yellow">Start First Break</button>
+              <button id="secondBreakBtn" class="btn-yellow">Start Second Break</button>
+              <button id="thirdBreakBtn" class="btn-yellow">Start Third Break</button>
+              <button id="extraBreakBtn" class="btn-yellow">Start Extra Break</button>
+              <button id="endBreakBtn" class="btn-blue">End Current Break</button>
+              <button id="refreshBtn" class="btn-gray">Refresh Status</button>
+            </div>
+
+            <div style="height: 16px;"></div>
+            <div id="liveStatus" class="status">Waiting for data...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div id="adminArea" class="card hidden">
+          <h2>Admin Panel</h2>
+          <p class="muted">Only visible when an admin logs in.</p>
+
+          <div class="grid">
+            <div class="col-4">
+              <div class="card" style="background: rgba(15, 23, 42, 0.5);">
+                <h3>Add New Member</h3>
+                <label for="newMemberName">Member name</label>
+                <input id="newMemberName" type="text" placeholder="e.g. Ali Raza" />
+
+                <div style="height: 10px;"></div>
+                <label for="newMemberPin">PIN</label>
+                <input id="newMemberPin" type="text" maxlength="10" placeholder="e.g. 5566" />
+
+                <div style="height: 14px;"></div>
+                <button id="addMemberBtn" class="btn-green">Add Member</button>
+              </div>
+            </div>
+
+            <div class="col-8">
+              <div class="card" style="background: rgba(15, 23, 42, 0.5);">
+                <div class="row">
+                  <div>
+                    <h3>Monthly Report</h3>
+                  </div>
+                  <div>
+                    <label for="reportMonth">Select month</label>
+                    <input id="reportMonth" type="month" />
+                  </div>
+                  <div style="align-self: end;">
+                    <button id="loadReportBtn" class="btn-blue">Load Report</button>
+                  </div>
+                </div>
+                <div id="reportWrap" class="small muted" style="margin-top: 14px;">No report loaded yet.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">Developed by Muhammad Umer Zaib</div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    // ------------------------------------------------------
+    // 1) PASTE YOUR SUPABASE URL + ANON KEY BELOW
+    // ------------------------------------------------------
+    const SUPABASE_URL = 'https://adpatyxmhzktowonvehp.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkcGF0eXhtaHprdG93b252ZWhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMzgyMzQsImV4cCI6MjA4ODkxNDIzNH0.6si-JyML8fWkg07-zJ2SpyDYICIWXy66pvHt1RnWTZw';
+
+    if (!SUPABASE_URL || SUPABASE_URL.includes('PASTE_') || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('PASTE_')) {
+      document.getElementById('authBadge').textContent = 'Supabase keys missing';
+      showMessage('Please paste your Supabase URL and anon key in index.html first.', 'error');
+      throw new Error('Supabase environment variables missing in index.html');
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+      },
+    });
+
+    const els = {
+      authBadge: document.getElementById('authBadge'),
+      messageBox: document.getElementById('messageBox'),
+      memberSelect: document.getElementById('memberSelect'),
+      memberPin: document.getElementById('memberPin'),
+      loginBtn: document.getElementById('loginBtn'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      currentUserBox: document.getElementById('currentUserBox'),
+      memberArea: document.getElementById('memberArea'),
+      adminArea: document.getElementById('adminArea'),
+      clockInBtn: document.getElementById('clockInBtn'),
+      clockOutBtn: document.getElementById('clockOutBtn'),
+      firstBreakBtn: document.getElementById('firstBreakBtn'),
+      secondBreakBtn: document.getElementById('secondBreakBtn'),
+      thirdBreakBtn: document.getElementById('thirdBreakBtn'),
+      extraBreakBtn: document.getElementById('extraBreakBtn'),
+      endBreakBtn: document.getElementById('endBreakBtn'),
+      refreshBtn: document.getElementById('refreshBtn'),
+      liveStatus: document.getElementById('liveStatus'),
+      newMemberName: document.getElementById('newMemberName'),
+      newMemberPin: document.getElementById('newMemberPin'),
+      addMemberBtn: document.getElementById('addMemberBtn'),
+      reportMonth: document.getElementById('reportMonth'),
+      loadReportBtn: document.getElementById('loadReportBtn'),
+      reportWrap: document.getElementById('reportWrap'),
+    };
+
+    let members = [];
+    let currentMember = null;
+
+    function showMessage(text, type = 'info') {
+      els.messageBox.className = `message ${type}`;
+      els.messageBox.textContent = text;
+      els.messageBox.classList.remove('hidden');
+      setTimeout(() => {
+        els.messageBox.classList.add('hidden');
+      }, 3500);
+    }
+
+    function getTodayLocalDate() {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function getCurrentMonthValue() {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      return `${yyyy}-${mm}`;
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '-';
+      return new Date(value).toLocaleString();
+    }
+
+    function diffMinutes(start, end) {
+      const ms = new Date(end).getTime() - new Date(start).getTime();
+      return Math.max(0, Math.round(ms / 60000));
+    }
+
+    async function ensureAnonymousSession() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session) {
+        els.authBadge.textContent = 'Connected';
+        return;
+      }
+
+      const { error } = await supabase.auth.signInAnonymously();
+      if (error) {
+        els.authBadge.textContent = 'Connection failed';
+        throw error;
+      }
+      els.authBadge.textContent = 'Connected';
+    }
+
+    async function loadMembers() {
+      const { data, error } = await supabase
+        .from('members')
+        .select('id, name, pin, is_admin, admin_email, active')
+        .eq('active', true)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      members = data || [];
+
+      els.memberSelect.innerHTML = '<option value="">Select a member</option>' + members
+        .map(member => `<option value="${member.id}">${escapeHtml(member.name)}</option>`)
+        .join('');
+    }
+
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return String(text).replace(/[&<>"']/g, m => map[m]);
+    }
+
+    function saveCurrentMember(member) {
+      localStorage.setItem('attendance_current_member', JSON.stringify(member));
+    }
+
+    function loadSavedMember() {
+      const raw = localStorage.getItem('attendance_current_member');
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+
+    function clearSavedMember() {
+      localStorage.removeItem('attendance_current_member');
+    }
+
+    async function loginMember() {
+      const selectedId = els.memberSelect.value;
+      const pin = els.memberPin.value.trim();
+      if (!selectedId || !pin) {
+        showMessage('Please select member and enter PIN.', 'error');
+        return;
+      }
+
+      const member = members.find(m => m.id === selectedId);
+      if (!member) {
+        showMessage('Member not found.', 'error');
+        return;
+      }
+
+      if (String(member.pin) !== pin) {
+        showMessage('Wrong PIN.', 'error');
+        return;
+      }
+
+      currentMember = member;
+      saveCurrentMember(member);
+      els.memberPin.value = '';
+      paintCurrentUser();
+      await refreshDashboard();
+      showMessage(`Welcome, ${member.name}.`, 'success');
+    }
+
+    function logoutMember() {
+      currentMember = null;
+      clearSavedMember();
+      paintCurrentUser();
+      els.liveStatus.textContent = 'Waiting for data...';
+      showMessage('Logged out successfully.', 'success');
+    }
+
+    function paintCurrentUser() {
+      if (!currentMember) {
+        els.currentUserBox.innerHTML = 'No member logged in yet.';
+        els.memberArea.classList.add('hidden');
+        els.adminArea.classList.add('hidden');
+        els.logoutBtn.classList.add('hidden');
+        return;
+      }
+
+      els.currentUserBox.innerHTML = `
+        <strong>${escapeHtml(currentMember.name)}</strong><br>
+        <span class="muted">Role: ${currentMember.is_admin ? 'Admin' : 'Team Member'}</span>
+        ${currentMember.admin_email ? `<br><span class="muted">Admin Email: ${escapeHtml(currentMember.admin_email)}</span>` : ''}
+      `;
+      els.memberArea.classList.remove('hidden');
+      els.logoutBtn.classList.remove('hidden');
+      if (currentMember.is_admin) {
+        els.adminArea.classList.remove('hidden');
+      } else {
+        els.adminArea.classList.add('hidden');
+      }
+    }
+
+    async function getOpenSession(memberId) {
+      const { data, error } = await supabase
+        .from('attendance_sessions')
+        .select('*')
+        .eq('member_id', memberId)
+        .eq('status', 'open')
+        .order('clock_in', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    }
+
+    async function getBreaks(sessionId) {
+      const { data, error } = await supabase
+        .from('break_logs')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('started_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function getOpenBreak(sessionId) {
+      const { data, error } = await supabase
+        .from('break_logs')
+        .select('*')
+        .eq('session_id', sessionId)
+        .eq('status', 'open')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    }
+
+    async function clockIn() {
+      try {
+        if (!currentMember) return showMessage('Login first.', 'error');
+        const openSession = await getOpenSession(currentMember.id);
+        if (openSession) return showMessage('This member is already clocked in.', 'error');
+
+        const now = new Date().toISOString();
+        const { error } = await supabase.from('attendance_sessions').insert({
+          member_id: currentMember.id,
+          session_date: getTodayLocalDate(),
+          clock_in: now,
+          status: 'open',
+          total_break_minutes: 0,
+        });
+
+        if (error) throw error;
+        await refreshDashboard();
+        showMessage('Clocked in successfully.', 'success');
+      } catch (err) {
+        console.error(err);
+        showMessage(err.message || 'Clock in failed.', 'error');
+      }
+    }
+
+    async function clockOut() {
+      try {
+        if (!currentMember) return showMessage('Login first.', 'error');
+        const session = await getOpenSession(currentMember.id);
+        if (!session) return showMessage('No open session found.', 'error');
+
+        const openBreak = await getOpenBreak(session.id);
+        if (openBreak) return showMessage('Please end the current break before clock out.', 'error');
+
+        const breaks = await getBreaks(session.id);
+        const totalBreakMinutes = breaks
+          .filter(b => b.status === 'closed')
+          .reduce((sum, b) => sum + (b.duration_minutes || 0), 0);
+
+        const { error } = await supabase
+          .from('attendance_sessions')
+          .update({
+            clock_out: new Date().toISOString(),
+            total_break_minutes: totalBreakMinutes,
+            status: 'closed',
+          })
+          .eq('id', session.id);
+
+        if (error) throw error;
+        await refreshDashboard();
+        showMessage('Clocked out successfully.', 'success');
+      } catch (err) {
+        console.error(err);
+        showMessage(err.message || 'Clock out failed.', 'error');
+      }
+    }
+
+    async function startBreak(type) {
+      try {
+        if (!currentMember) return showMessage('Login first.', 'error');
+        const session = await getOpenSession(currentMember.id);
+        if (!session) return showMessage('Clock in first.', 'error');
+
+        const openBreak = await getOpenBreak(session.id);
+        if (openBreak) return showMessage('A break is already running.', 'error');
+
+        const breaks = await getBreaks(session.id);
+        const standardBreakCount = breaks.filter(b => ['First Break', 'Second Break', 'Third Break'].includes(b.break_type)).length;
+
+        if (type === 'First Break' && standardBreakCount > 0) return showMessage('First break already used.', 'error');
+        if (type === 'Second Break' && standardBreakCount < 1) return showMessage('Take first break before second break.', 'error');
+        if (type === 'Second Break' && breaks.some(b => b.break_type === 'Second Break')) return showMessage('Second break already used.', 'error');
+        if (type === 'Third Break' && breaks.filter(b => ['First Break', 'Second Break'].includes(b.break_type)).length < 2) return showMessage('Take first and second breaks before third break.', 'error');
+        if (type === 'Third Break' && breaks.some(b => b.break_type === 'Third Break')) return showMessage('Third break already used.', 'error');
+
+        const standardIndexMap = { 'First Break': 1, 'Second Break': 2, 'Third Break': 3 };
+        const breakNumber = standardIndexMap[type] || null;
+
+        const { error } = await supabase.from('break_logs').insert({
+          session_id: session.id,
+          break_number: breakNumber,
+          break_type: type,
+          started_at: new Date().toISOString(),
+          status: 'open',
+          duration_minutes: 0,
+        });
+
+        if (error) throw error;
+        await refreshDashboard();
+        showMessage(`${type} started.`, 'success');
+      } catch (err) {
+        console.error(err);
+        showMessage(err.message || 'Could not start break.', 'error');
+      }
+    }
+
+    async function endBreak() {
+      try {
+        if (!currentMember) return showMessage('Login first.', 'error');
+        const session = await getOpenSession(currentMember.id);
+        if (!session) return showMessage('No open session found.', 'error');
+
+        const openBreak = await getOpenBreak(session.id);
+        if (!openBreak) return showMessage('No running break found.', 'error');
+
+        const endedAt = new Date().toISOString();
+        const durationMinutes = diffMinutes(openBreak.started_at, endedAt);
+
+        const { error } = await supabase
+          .from('break_logs')
+          .update({
+            ended_at: endedAt,
+            duration_minutes: durationMinutes,
+            status: 'closed',
+          })
+          .eq('id', openBreak.id);
+
+        if (error) throw error;
+        await refreshDashboard();
+        showMessage(`Break ended. Duration: ${durationMinutes} min.`, 'success');
+      } catch (err) {
+        console.error(err);
+        showMessage(err.message || 'Could not end break.', 'error');
+      }
+    }
+
+    async function refreshDashboard() {
+      try {
+        if (!currentMember) return;
+        const session = await getOpenSession(currentMember.id);
+
+        if (!session) {
+          els.liveStatus.innerHTML = `
+            <strong>Status:</strong> Not clocked in right now.<br>
+            <span class="muted">Press <strong>Clock In</strong> when the member arrives.</span>
+          `;
+          return;
+        }
+
+        const breaks = await getBreaks(session.id);
+        const openBreak = breaks.find(b => b.status === 'open');
+        const closedBreaks = breaks.filter(b => b.status === 'closed');
+        const totalBreakMinutes = closedBreaks.reduce((sum, b) => sum + (b.duration_minutes || 0), 0);
+
+        const breakRows = breaks.length
+          ? breaks.map(b => `
+              <tr>
+                <td>${escapeHtml(b.break_type || '-')}</td>
+                <td>${formatDateTime(b.started_at)}</td>
+                <td>${formatDateTime(b.ended_at)}</td>
+                <td>${b.status === 'open' ? 'Running' : `${b.duration_minutes || 0} min`}</td>
+              </tr>
+            `).join('')
+          : '<tr><td colspan="4">No breaks yet.</td></tr>';
+
+        els.liveStatus.innerHTML = `
+          <div class="row">
+            <div><span class="pill">Clock In: ${formatDateTime(session.clock_in)}</span></div>
+            <div><span class="pill">Session Date: ${escapeHtml(session.session_date)}</span></div>
+            <div><span class="pill">Break Total: ${totalBreakMinutes} min</span></div>
+            <div><span class="pill">${openBreak ? 'Current Break Running' : 'No Break Running'}</span></div>
+          </div>
+          <div style="margin-top: 10px; overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Break Type</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Duration</th>
+                </tr>
+              </thead>
+              <tbody>${breakRows}</tbody>
+            </table>
+          </div>
+        `;
+      } catch (err) {
+        console.error(err);
+        showMessage(err.message || 'Could not refresh dashboard.', 'error');
+      }
+    }
+
+    async function addMember() {
+      try {
+        if (!currentMember || !currentMember.is_admin) {
+          return showMessage('Only admin can add members.', 'error');
+        }
+
+        const name = els.newMemberName.value.trim();
+        const pin = els.newMemberPin.value.trim();
+        if (!name || !pin) return showMessage('Enter member name and PIN.', 'error');
+
+        const { error } = await supabase.from('members').insert({
+          name,
+          pin,
+          is_admin: false,
+          admin_email: null,
+          active: true,
+        });
+
+        if (error) throw error;
+        els.newMemberName.value = '';
+        els.newMemberPin.value = '';
+        await loadMembers();
+        showMessage('New member added successfully.', 'success');
+      } catch (err) {
+        console.error(err);
+        showMessage(err.message || 'Could not add member.', 'error');
+      }
+    }
+
+    async function loadMonthlyReport() {
+      try {
+        if (!currentMember || !currentMember.is_admin) {
+          return showMessage('Only admin can view report.', 'error');
+        }
+
+        const monthValue = els.reportMonth.value;
+        if (!monthValue) return showMessage('Please select a month.', 'error');
+
+        const startDate = `${monthValue}-01`;
+        const endDateObj = new Date(`${monthValue}-01T00:00:00`);
+        endDateObj.setMonth(endDateObj.getMonth() + 1);
+        const endDate = `${endDateObj.getFullYear()}-${String(endDateObj.getMonth() + 1).padStart(2, '0')}-01`;
+
+        const { data, error } = await supabase
+          .from('attendance_sessions')
+          .select(`
+            id,
+            session_date,
+            clock_in,
+            clock_out,
+            total_break_minutes,
+            status,
+            members!inner(name)
+          `)
+          .gte('session_date', startDate)
+          .lt('session_date', endDate)
+          .order('session_date', { ascending: false })
+          .order('clock_in', { ascending: false });
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          els.reportWrap.innerHTML = 'No records found for this month.';
+          return;
+        }
+
+        const rows = data.map(item => {
+          const totalWorkMinutes = item.clock_out
+            ? Math.max(0, diffMinutes(item.clock_in, item.clock_out) - (item.total_break_minutes || 0))
+            : '-';
+
+          return `
+            <tr>
+              <td>${escapeHtml(item.members.name)}</td>
+              <td>${escapeHtml(item.session_date)}</td>
+              <td>${formatDateTime(item.clock_in)}</td>
+              <td>${formatDateTime(item.clock_out)}</td>
+              <td>${item.total_break_minutes || 0} min</td>
+              <td>${typeof totalWorkMinutes === 'number' ? totalWorkMinutes + ' min' : '-'}</td>
+              <td>${escapeHtml(item.status)}</td>
+            </tr>
+          `;
+        }).join('');
+
+        els.reportWrap.innerHTML = `
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Date</th>
+                  <th>Clock In</th>
+                  <th>Clock Out</th>
+                  <th>Total Break</th>
+                  <th>Net Work</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        `;
+      } catch (err) {
+        console.error(err);
+        showMessage(err.message || 'Could not load report.', 'error');
+      }
+    }
+
+    function attachEvents() {
+      els.loginBtn.addEventListener('click', loginMember);
+      els.logoutBtn.addEventListener('click', logoutMember);
+      els.clockInBtn.addEventListener('click', clockIn);
+      els.clockOutBtn.addEventListener('click', clockOut);
+      els.firstBreakBtn.addEventListener('click', () => startBreak('First Break'));
+      els.secondBreakBtn.addEventListener('click', () => startBreak('Second Break'));
+      els.thirdBreakBtn.addEventListener('click', () => startBreak('Third Break'));
+      els.extraBreakBtn.addEventListener('click', () => startBreak('Extra Break'));
+      els.endBreakBtn.addEventListener('click', endBreak);
+      els.refreshBtn.addEventListener('click', refreshDashboard);
+      els.addMemberBtn.addEventListener('click', addMember);
+      els.loadReportBtn.addEventListener('click', loadMonthlyReport);
+
+      els.memberPin.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') loginMember();
+      });
+    }
+
+    async function boot() {
+      try {
+        els.reportMonth.value = getCurrentMonthValue();
+        await ensureAnonymousSession();
+        await loadMembers();
+        attachEvents();
+
+        const saved = loadSavedMember();
+        if (saved) {
+          const realMember = members.find(m => m.id === saved.id && m.pin === saved.pin);
+          if (realMember) {
+            currentMember = realMember;
+          }
+        }
+
+        paintCurrentUser();
+        if (currentMember) {
+          await refreshDashboard();
+        }
+      } catch (err) {
+        console.error(err);
+        els.authBadge.textContent = 'Setup error';
+        showMessage(err.message || 'App boot failed.', 'error');
+      }
+    }
+
+    boot();
+  </script>
+</body>
 </html>
