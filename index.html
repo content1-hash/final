@@ -31,7 +31,7 @@
     }
 
     .container {
-      max-width: 1200px;
+      max-width: 1350px;
       margin: 0 auto;
       padding: 20px;
     }
@@ -178,6 +178,8 @@
     .row > div { flex: 1; min-width: 180px; }
     .right { text-align: right; }
     .mono { font-family: Consolas, monospace; }
+    .danger-zone { border: 1px solid rgba(239, 68, 68, 0.25); }
+    .good-zone { border: 1px solid rgba(34, 197, 94, 0.25); }
   </style>
 </head>
 <body>
@@ -185,7 +187,7 @@
     <div class="topbar">
       <div>
         <h1>Team Attendance Platform</h1>
-        <p class="muted">Clock in, breaks, clock out, and monthly records.</p>
+        <p class="muted">Clock in, breaks, clock out, and detailed daily/monthly records.</p>
       </div>
       <div id="authBadge" class="pill">Connecting...</div>
     </div>
@@ -211,8 +213,7 @@
 
           <div style="height: 14px;"></div>
           <div class="small muted">
-            Dummy members included for now.<br>
-            Admin accounts are already prepared in SQL setup.
+            Admins can add/delete members and view/download reports by day and month.
           </div>
         </div>
       </div>
@@ -228,7 +229,6 @@
               <button id="clockOutBtn" class="btn-red">Clock Out</button>
               <button id="firstBreakBtn" class="btn-yellow">Start First Break</button>
               <button id="secondBreakBtn" class="btn-yellow">Start Second Break</button>
-              <button id="thirdBreakBtn" class="btn-yellow">Start Third Break</button>
               <button id="extraBreakBtn" class="btn-yellow">Start Extra Break</button>
               <button id="endBreakBtn" class="btn-blue">End Current Break</button>
               <button id="refreshBtn" class="btn-gray">Refresh Status</button>
@@ -247,7 +247,7 @@
 
           <div class="grid">
             <div class="col-4">
-              <div class="card" style="background: rgba(15, 23, 42, 0.5);">
+              <div class="card good-zone" style="background: rgba(15, 23, 42, 0.5);">
                 <h3>Add New Member</h3>
                 <label for="newMemberName">Member name</label>
                 <input id="newMemberName" type="text" placeholder="e.g. Ali Raza" />
@@ -261,21 +261,64 @@
               </div>
             </div>
 
-            <div class="col-8">
+            <div class="col-4">
+              <div class="card danger-zone" style="background: rgba(15, 23, 42, 0.5);">
+                <h3>Delete Member</h3>
+                <label for="deleteMemberSelect">Select member</label>
+                <select id="deleteMemberSelect"></select>
+
+                <div style="height: 14px;"></div>
+                <button id="deleteMemberBtn" class="btn-red">Delete Member</button>
+                <div style="height: 10px;"></div>
+                <div class="small muted">This will deactivate the member and keep old records safe.</div>
+              </div>
+            </div>
+
+            <div class="col-4">
               <div class="card" style="background: rgba(15, 23, 42, 0.5);">
-                <div class="row">
-                  <div>
-                    <h3>Monthly Report</h3>
-                  </div>
-                  <div>
-                    <label for="reportMonth">Select month</label>
-                    <input id="reportMonth" type="month" />
-                  </div>
-                  <div style="align-self: end;">
-                    <button id="loadReportBtn" class="btn-blue">Load Report</button>
-                  </div>
+                <h3>Report Filters</h3>
+
+                <label for="reportScope">Report scope</label>
+                <select id="reportScope">
+                  <option value="team">Whole Team</option>
+                  <option value="member">Single Member</option>
+                </select>
+
+                <div style="height: 10px;"></div>
+                <div id="reportMemberWrap" class="hidden">
+                  <label for="reportMemberSelect">Select member</label>
+                  <select id="reportMemberSelect"></select>
                 </div>
-                <div id="reportWrap" class="small muted" style="margin-top: 14px;">No report loaded yet.</div>
+
+                <label for="reportType">Report type</label>
+                <select id="reportType">
+                  <option value="day">By Day</option>
+                  <option value="month">By Month</option>
+                </select>
+
+                <div style="height: 10px;"></div>
+                <div id="reportDayWrap">
+                  <label for="reportDate">Select date</label>
+                  <input id="reportDate" type="date" />
+                </div>
+
+                <div id="reportMonthWrap" class="hidden">
+                  <label for="reportMonth">Select month</label>
+                  <input id="reportMonth" type="month" />
+                </div>
+
+                <div style="height: 14px;"></div>
+                <div class="row">
+                  <div><button id="loadReportBtn" class="btn-blue">Load Report</button></div>
+                  <div><button id="downloadReportBtn" class="btn-green">Download CSV</button></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="card" style="background: rgba(15, 23, 42, 0.5);">
+                <h3>Report Result</h3>
+                <div id="reportWrap" class="small muted">No report loaded yet.</div>
               </div>
             </div>
           </div>
@@ -289,9 +332,6 @@
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-    // ------------------------------------------------------
-    // 1) PASTE YOUR SUPABASE URL + ANON KEY BELOW
-    // ------------------------------------------------------
     const SUPABASE_URL = 'https://adpatyxmhzktowonvehp.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkcGF0eXhtaHprdG93b252ZWhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMzgyMzQsImV4cCI6MjA4ODkxNDIzNH0.6si-JyML8fWkg07-zJ2SpyDYICIWXy66pvHt1RnWTZw';
 
@@ -323,7 +363,6 @@
       clockOutBtn: document.getElementById('clockOutBtn'),
       firstBreakBtn: document.getElementById('firstBreakBtn'),
       secondBreakBtn: document.getElementById('secondBreakBtn'),
-      thirdBreakBtn: document.getElementById('thirdBreakBtn'),
       extraBreakBtn: document.getElementById('extraBreakBtn'),
       endBreakBtn: document.getElementById('endBreakBtn'),
       refreshBtn: document.getElementById('refreshBtn'),
@@ -331,13 +370,24 @@
       newMemberName: document.getElementById('newMemberName'),
       newMemberPin: document.getElementById('newMemberPin'),
       addMemberBtn: document.getElementById('addMemberBtn'),
+      deleteMemberSelect: document.getElementById('deleteMemberSelect'),
+      deleteMemberBtn: document.getElementById('deleteMemberBtn'),
+      reportScope: document.getElementById('reportScope'),
+      reportMemberWrap: document.getElementById('reportMemberWrap'),
+      reportMemberSelect: document.getElementById('reportMemberSelect'),
+      reportType: document.getElementById('reportType'),
+      reportDayWrap: document.getElementById('reportDayWrap'),
+      reportMonthWrap: document.getElementById('reportMonthWrap'),
+      reportDate: document.getElementById('reportDate'),
       reportMonth: document.getElementById('reportMonth'),
       loadReportBtn: document.getElementById('loadReportBtn'),
+      downloadReportBtn: document.getElementById('downloadReportBtn'),
       reportWrap: document.getElementById('reportWrap'),
     };
 
     let members = [];
     let currentMember = null;
+    let lastReportRows = [];
 
     function showMessage(text, type = 'info') {
       els.messageBox.className = `message ${type}`;
@@ -373,6 +423,25 @@
       return Math.max(0, Math.round(ms / 60000));
     }
 
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return String(text).replace(/[&<>"']/g, m => map[m]);
+    }
+
+    function saveCurrentMember(member) {
+      localStorage.setItem('attendance_current_member', JSON.stringify(member));
+    }
+
+    function loadSavedMember() {
+      const raw = localStorage.getItem('attendance_current_member');
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+
+    function clearSavedMember() {
+      localStorage.removeItem('attendance_current_member');
+    }
+
     async function ensureAnonymousSession() {
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session) {
@@ -398,33 +467,53 @@
       if (error) throw error;
       members = data || [];
 
-      els.memberSelect.innerHTML = '<option value="">Select a member</option>' + members
+      const options = '<option value="">Select a member</option>' + members
         .map(member => `<option value="${member.id}">${escapeHtml(member.name)}</option>`)
         .join('');
+
+      els.memberSelect.innerHTML = options;
+
+      const nonAdminMembers = members.filter(m => !m.is_admin);
+      const deleteOptions = '<option value="">Select a member</option>' + nonAdminMembers
+        .map(member => `<option value="${member.id}">${escapeHtml(member.name)}</option>`)
+        .join('');
+      els.deleteMemberSelect.innerHTML = deleteOptions;
+
+      const reportMemberOptions = '<option value="">Select a member</option>' + members
+        .map(member => `<option value="${member.id}">${escapeHtml(member.name)}</option>`)
+        .join('');
+      els.reportMemberSelect.innerHTML = reportMemberOptions;
     }
 
-    function escapeHtml(text) {
-      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-      return String(text).replace(/[&<>"']/g, m => map[m]);
-    }
+    function paintCurrentUser() {
+      if (!currentMember) {
+        els.currentUserBox.innerHTML = 'No member logged in yet.';
+        els.memberArea.classList.add('hidden');
+        els.adminArea.classList.add('hidden');
+        els.logoutBtn.classList.add('hidden');
+        return;
+      }
 
-    function saveCurrentMember(member) {
-      localStorage.setItem('attendance_current_member', JSON.stringify(member));
-    }
+      els.currentUserBox.innerHTML = `
+        <strong>${escapeHtml(currentMember.name)}</strong><br>
+        <span class="muted">Role: ${currentMember.is_admin ? 'Admin' : 'Team Member'}</span>
+        ${currentMember.admin_email ? `<br><span class="muted">Admin Email: ${escapeHtml(currentMember.admin_email)}</span>` : ''}
+      `;
 
-    function loadSavedMember() {
-      const raw = localStorage.getItem('attendance_current_member');
-      if (!raw) return null;
-      try { return JSON.parse(raw); } catch { return null; }
-    }
+      els.memberArea.classList.remove('hidden');
+      els.logoutBtn.classList.remove('hidden');
 
-    function clearSavedMember() {
-      localStorage.removeItem('attendance_current_member');
+      if (currentMember.is_admin) {
+        els.adminArea.classList.remove('hidden');
+      } else {
+        els.adminArea.classList.add('hidden');
+      }
     }
 
     async function loginMember() {
       const selectedId = els.memberSelect.value;
       const pin = els.memberPin.value.trim();
+
       if (!selectedId || !pin) {
         showMessage('Please select member and enter PIN.', 'error');
         return;
@@ -457,35 +546,12 @@
       showMessage('Logged out successfully.', 'success');
     }
 
-    function paintCurrentUser() {
-      if (!currentMember) {
-        els.currentUserBox.innerHTML = 'No member logged in yet.';
-        els.memberArea.classList.add('hidden');
-        els.adminArea.classList.add('hidden');
-        els.logoutBtn.classList.add('hidden');
-        return;
-      }
-
-      els.currentUserBox.innerHTML = `
-        <strong>${escapeHtml(currentMember.name)}</strong><br>
-        <span class="muted">Role: ${currentMember.is_admin ? 'Admin' : 'Team Member'}</span>
-        ${currentMember.admin_email ? `<br><span class="muted">Admin Email: ${escapeHtml(currentMember.admin_email)}</span>` : ''}
-      `;
-      els.memberArea.classList.remove('hidden');
-      els.logoutBtn.classList.remove('hidden');
-      if (currentMember.is_admin) {
-        els.adminArea.classList.remove('hidden');
-      } else {
-        els.adminArea.classList.add('hidden');
-      }
-    }
-
     async function getOpenSession(memberId) {
       const { data, error } = await supabase
         .from('attendance_sessions')
         .select('*')
         .eq('member_id', memberId)
-        .eq('status', 'open')
+        .neq('status', 'clocked_out')
         .order('clock_in', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -519,18 +585,34 @@
       return data;
     }
 
+    async function updateSessionBreakTotal(sessionId) {
+      const breaks = await getBreaks(sessionId);
+      const totalBreakMinutes = breaks
+        .filter(b => b.status === 'closed')
+        .reduce((sum, b) => sum + (b.duration_minutes || 0), 0);
+
+      const { error } = await supabase
+        .from('attendance_sessions')
+        .update({ total_break_minutes: totalBreakMinutes })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+    }
+
     async function clockIn() {
       try {
         if (!currentMember) return showMessage('Login first.', 'error');
+
         const openSession = await getOpenSession(currentMember.id);
         if (openSession) return showMessage('This member is already clocked in.', 'error');
 
         const now = new Date().toISOString();
+
         const { error } = await supabase.from('attendance_sessions').insert({
           member_id: currentMember.id,
           session_date: getTodayLocalDate(),
           clock_in: now,
-          status: 'open',
+          status: 'working',
           total_break_minutes: 0,
         });
 
@@ -546,11 +628,14 @@
     async function clockOut() {
       try {
         if (!currentMember) return showMessage('Login first.', 'error');
+
         const session = await getOpenSession(currentMember.id);
-        if (!session) return showMessage('No open session found.', 'error');
+        if (!session) return showMessage('No active session found.', 'error');
 
         const openBreak = await getOpenBreak(session.id);
         if (openBreak) return showMessage('Please end the current break before clock out.', 'error');
+
+        await updateSessionBreakTotal(session.id);
 
         const breaks = await getBreaks(session.id);
         const totalBreakMinutes = breaks
@@ -562,7 +647,7 @@
           .update({
             clock_out: new Date().toISOString(),
             total_break_minutes: totalBreakMinutes,
-            status: 'closed',
+            status: 'clocked_out',
           })
           .eq('id', session.id);
 
@@ -578,34 +663,40 @@
     async function startBreak(type) {
       try {
         if (!currentMember) return showMessage('Login first.', 'error');
+
         const session = await getOpenSession(currentMember.id);
         if (!session) return showMessage('Clock in first.', 'error');
 
         const openBreak = await getOpenBreak(session.id);
-        if (openBreak) return showMessage('A break is already running.', 'error');
+        if (openBreak) return showMessage('You must end the current break before starting another break.', 'error');
 
         const breaks = await getBreaks(session.id);
-        const standardBreakCount = breaks.filter(b => ['First Break', 'Second Break', 'Third Break'].includes(b.break_type)).length;
 
-        if (type === 'First Break' && standardBreakCount > 0) return showMessage('First break already used.', 'error');
-        if (type === 'Second Break' && standardBreakCount < 1) return showMessage('Take first break before second break.', 'error');
-        if (type === 'Second Break' && breaks.some(b => b.break_type === 'Second Break')) return showMessage('Second break already used.', 'error');
-        if (type === 'Third Break' && breaks.filter(b => ['First Break', 'Second Break'].includes(b.break_type)).length < 2) return showMessage('Take first and second breaks before third break.', 'error');
-        if (type === 'Third Break' && breaks.some(b => b.break_type === 'Third Break')) return showMessage('Third break already used.', 'error');
+        if (type === 'First Break' && breaks.some(b => b.break_type === 'First Break')) {
+          return showMessage('First break can only be taken once.', 'error');
+        }
 
-        const standardIndexMap = { 'First Break': 1, 'Second Break': 2, 'Third Break': 3 };
-        const breakNumber = standardIndexMap[type] || null;
+        if (type === 'Second Break' && breaks.some(b => b.break_type === 'Second Break')) {
+          return showMessage('Second break can only be taken once.', 'error');
+        }
 
-        const { error } = await supabase.from('break_logs').insert({
+        const { error: insertError } = await supabase.from('break_logs').insert({
           session_id: session.id,
-          break_number: breakNumber,
           break_type: type,
           started_at: new Date().toISOString(),
           status: 'open',
           duration_minutes: 0,
         });
 
-        if (error) throw error;
+        if (insertError) throw insertError;
+
+        const { error: updateError } = await supabase
+          .from('attendance_sessions')
+          .update({ status: 'on_break' })
+          .eq('id', session.id);
+
+        if (updateError) throw updateError;
+
         await refreshDashboard();
         showMessage(`${type} started.`, 'success');
       } catch (err) {
@@ -617,8 +708,9 @@
     async function endBreak() {
       try {
         if (!currentMember) return showMessage('Login first.', 'error');
+
         const session = await getOpenSession(currentMember.id);
-        if (!session) return showMessage('No open session found.', 'error');
+        if (!session) return showMessage('No active session found.', 'error');
 
         const openBreak = await getOpenBreak(session.id);
         if (!openBreak) return showMessage('No running break found.', 'error');
@@ -626,7 +718,7 @@
         const endedAt = new Date().toISOString();
         const durationMinutes = diffMinutes(openBreak.started_at, endedAt);
 
-        const { error } = await supabase
+        const { error: breakError } = await supabase
           .from('break_logs')
           .update({
             ended_at: endedAt,
@@ -635,23 +727,57 @@
           })
           .eq('id', openBreak.id);
 
-        if (error) throw error;
+        if (breakError) throw breakError;
+
+        await updateSessionBreakTotal(session.id);
+
+        const { error: sessionError } = await supabase
+          .from('attendance_sessions')
+          .update({ status: 'working' })
+          .eq('id', session.id);
+
+        if (sessionError) throw sessionError;
+
         await refreshDashboard();
-        showMessage(`Break ended. Duration: ${durationMinutes} min.`, 'success');
+        showMessage(`${openBreak.break_type} ended. Duration: ${durationMinutes} min.`, 'success');
       } catch (err) {
         console.error(err);
         showMessage(err.message || 'Could not end break.', 'error');
       }
     }
 
+    function buildBreakDetailHtml(breaks) {
+      if (!breaks || breaks.length === 0) return 'No breaks';
+      return breaks.map(b => {
+        const duration = b.status === 'open' ? 'Running' : `${b.duration_minutes || 0} min`;
+        return `
+          <div style="margin-bottom: 8px;">
+            <strong>${escapeHtml(b.break_type)}</strong><br>
+            Start: ${formatDateTime(b.started_at)}<br>
+            End: ${formatDateTime(b.ended_at)}<br>
+            Duration: ${duration}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function buildBreakDetailText(breaks) {
+      if (!breaks || breaks.length === 0) return 'No breaks';
+      return breaks.map(b => {
+        const duration = b.status === 'open' ? 'Running' : `${b.duration_minutes || 0} min`;
+        return `${b.break_type} | Start: ${formatDateTime(b.started_at)} | End: ${formatDateTime(b.ended_at)} | Duration: ${duration}`;
+      }).join(' || ');
+    }
+
     async function refreshDashboard() {
       try {
         if (!currentMember) return;
+
         const session = await getOpenSession(currentMember.id);
 
         if (!session) {
           els.liveStatus.innerHTML = `
-            <strong>Status:</strong> Not clocked in right now.<br>
+            <strong>Status:</strong> Clocked Out<br>
             <span class="muted">Press <strong>Clock In</strong> when the member arrives.</span>
           `;
           return;
@@ -673,12 +799,15 @@
             `).join('')
           : '<tr><td colspan="4">No breaks yet.</td></tr>';
 
+        const uiStatus = session.status === 'on_break' ? 'On Break' : 'Working';
+
         els.liveStatus.innerHTML = `
           <div class="row">
+            <div><span class="pill">Status: ${uiStatus}</span></div>
             <div><span class="pill">Clock In: ${formatDateTime(session.clock_in)}</span></div>
             <div><span class="pill">Session Date: ${escapeHtml(session.session_date)}</span></div>
-            <div><span class="pill">Break Total: ${totalBreakMinutes} min</span></div>
-            <div><span class="pill">${openBreak ? 'Current Break Running' : 'No Break Running'}</span></div>
+            <div><span class="pill">Total Break: ${totalBreakMinutes} min</span></div>
+            <div><span class="pill">${openBreak ? `Current Break: ${escapeHtml(openBreak.break_type)}` : 'No Break Running'}</span></div>
           </div>
           <div style="margin-top: 10px; overflow-x: auto;">
             <table>
@@ -708,6 +837,7 @@
 
         const name = els.newMemberName.value.trim();
         const pin = els.newMemberPin.value.trim();
+
         if (!name || !pin) return showMessage('Enter member name and PIN.', 'error');
 
         const { error } = await supabase.from('members').insert({
@@ -719,6 +849,7 @@
         });
 
         if (error) throw error;
+
         els.newMemberName.value = '';
         els.newMemberPin.value = '';
         await loadMembers();
@@ -729,60 +860,173 @@
       }
     }
 
-    async function loadMonthlyReport() {
+    async function deleteMember() {
       try {
         if (!currentMember || !currentMember.is_admin) {
-          return showMessage('Only admin can view report.', 'error');
+          return showMessage('Only admin can delete members.', 'error');
         }
 
+        const memberId = els.deleteMemberSelect.value;
+        if (!memberId) return showMessage('Please select a member to delete.', 'error');
+
+        const member = members.find(m => m.id === memberId);
+        if (!member) return showMessage('Member not found.', 'error');
+        if (member.is_admin) return showMessage('Admin cannot be deleted from here.', 'error');
+
+        const confirmed = confirm(`Are you sure you want to delete ${member.name}?`);
+        if (!confirmed) return;
+
+        const { error } = await supabase
+          .from('members')
+          .update({ active: false })
+          .eq('id', memberId);
+
+        if (error) throw error;
+
+        if (currentMember && currentMember.id === memberId) {
+          logoutMember();
+        }
+
+        await loadMembers();
+        showMessage('Member deleted successfully.', 'success');
+      } catch (err) {
+        console.error(err);
+        showMessage(err.message || 'Could not delete member.', 'error');
+      }
+    }
+
+    function syncReportInputs() {
+      const scope = els.reportScope.value;
+      const type = els.reportType.value;
+
+      if (scope === 'member') {
+        els.reportMemberWrap.classList.remove('hidden');
+      } else {
+        els.reportMemberWrap.classList.add('hidden');
+      }
+
+      if (type === 'day') {
+        els.reportDayWrap.classList.remove('hidden');
+        els.reportMonthWrap.classList.add('hidden');
+      } else {
+        els.reportDayWrap.classList.add('hidden');
+        els.reportMonthWrap.classList.remove('hidden');
+      }
+    }
+
+    async function fetchReportSessions() {
+      if (!currentMember || !currentMember.is_admin) {
+        throw new Error('Only admin can view report.');
+      }
+
+      const scope = els.reportScope.value;
+      const type = els.reportType.value;
+      const memberId = els.reportMemberSelect.value;
+
+      let query = supabase
+        .from('attendance_sessions')
+        .select(`
+          id,
+          member_id,
+          session_date,
+          clock_in,
+          clock_out,
+          total_break_minutes,
+          status,
+          members!inner(name)
+        `)
+        .order('session_date', { ascending: false })
+        .order('clock_in', { ascending: false });
+
+      if (scope === 'member') {
+        if (!memberId) throw new Error('Please select a member.');
+        query = query.eq('member_id', memberId);
+      }
+
+      if (type === 'day') {
+        const reportDate = els.reportDate.value;
+        if (!reportDate) throw new Error('Please select a date.');
+        query = query.eq('session_date', reportDate);
+      } else {
         const monthValue = els.reportMonth.value;
-        if (!monthValue) return showMessage('Please select a month.', 'error');
+        if (!monthValue) throw new Error('Please select a month.');
 
         const startDate = `${monthValue}-01`;
         const endDateObj = new Date(`${monthValue}-01T00:00:00`);
         endDateObj.setMonth(endDateObj.getMonth() + 1);
         const endDate = `${endDateObj.getFullYear()}-${String(endDateObj.getMonth() + 1).padStart(2, '0')}-01`;
 
-        const { data, error } = await supabase
-          .from('attendance_sessions')
-          .select(`
-            id,
-            session_date,
-            clock_in,
-            clock_out,
-            total_break_minutes,
-            status,
-            members!inner(name)
-          `)
-          .gte('session_date', startDate)
-          .lt('session_date', endDate)
-          .order('session_date', { ascending: false })
-          .order('clock_in', { ascending: false });
+        query = query.gte('session_date', startDate).lt('session_date', endDate);
+      }
 
-        if (error) throw error;
+      const { data, error } = await query;
+      if (error) throw error;
 
-        if (!data || data.length === 0) {
-          els.reportWrap.innerHTML = 'No records found for this month.';
+      const sessions = data || [];
+      if (sessions.length === 0) return [];
+
+      const sessionIds = sessions.map(s => s.id);
+
+      const { data: breakData, error: breakError } = await supabase
+        .from('break_logs')
+        .select('*')
+        .in('session_id', sessionIds)
+        .order('started_at', { ascending: true });
+
+      if (breakError) throw breakError;
+
+      const breakMap = {};
+      (breakData || []).forEach(b => {
+        if (!breakMap[b.session_id]) breakMap[b.session_id] = [];
+        breakMap[b.session_id].push(b);
+      });
+
+      return sessions.map(session => {
+        const breaks = breakMap[session.id] || [];
+        const totalWorkMinutes = session.clock_out
+          ? Math.max(0, diffMinutes(session.clock_in, session.clock_out) - (session.total_break_minutes || 0))
+          : '-';
+
+        let viewStatus = 'Clocked Out';
+        if (session.status === 'working') viewStatus = 'Working';
+        if (session.status === 'on_break') viewStatus = 'On Break';
+
+        return {
+          member_name: session.members.name,
+          session_date: session.session_date,
+          clock_in: session.clock_in,
+          clock_out: session.clock_out,
+          total_break_minutes: session.total_break_minutes || 0,
+          total_work_minutes: totalWorkMinutes,
+          status: viewStatus,
+          break_details_html: buildBreakDetailHtml(breaks),
+          break_details_text: buildBreakDetailText(breaks),
+        };
+      });
+    }
+
+    async function loadReport() {
+      try {
+        const rows = await fetchReportSessions();
+        lastReportRows = rows;
+
+        if (!rows || rows.length === 0) {
+          els.reportWrap.innerHTML = 'No records found for selected filters.';
           return;
         }
 
-        const rows = data.map(item => {
-          const totalWorkMinutes = item.clock_out
-            ? Math.max(0, diffMinutes(item.clock_in, item.clock_out) - (item.total_break_minutes || 0))
-            : '-';
-
-          return `
-            <tr>
-              <td>${escapeHtml(item.members.name)}</td>
-              <td>${escapeHtml(item.session_date)}</td>
-              <td>${formatDateTime(item.clock_in)}</td>
-              <td>${formatDateTime(item.clock_out)}</td>
-              <td>${item.total_break_minutes || 0} min</td>
-              <td>${typeof totalWorkMinutes === 'number' ? totalWorkMinutes + ' min' : '-'}</td>
-              <td>${escapeHtml(item.status)}</td>
-            </tr>
-          `;
-        }).join('');
+        const htmlRows = rows.map(item => `
+          <tr>
+            <td>${escapeHtml(item.member_name)}</td>
+            <td>${escapeHtml(item.session_date)}</td>
+            <td>${formatDateTime(item.clock_in)}</td>
+            <td>${formatDateTime(item.clock_out)}</td>
+            <td>${item.total_break_minutes} min</td>
+            <td>${typeof item.total_work_minutes === 'number' ? item.total_work_minutes + ' min' : '-'}</td>
+            <td>${item.status}</td>
+            <td>${item.break_details_html}</td>
+          </tr>
+        `).join('');
 
         els.reportWrap.innerHTML = `
           <div style="overflow-x:auto;">
@@ -796,9 +1040,10 @@
                   <th>Total Break</th>
                   <th>Net Work</th>
                   <th>Status</th>
+                  <th>Break Details</th>
                 </tr>
               </thead>
-              <tbody>${rows}</tbody>
+              <tbody>${htmlRows}</tbody>
             </table>
           </div>
         `;
@@ -808,6 +1053,56 @@
       }
     }
 
+    function downloadCSV() {
+      if (!lastReportRows || lastReportRows.length === 0) {
+        showMessage('No report data available to download.', 'error');
+        return;
+      }
+
+      const header = [
+        'Member',
+        'Date',
+        'Clock In',
+        'Clock Out',
+        'Total Break Minutes',
+        'Net Work Minutes',
+        'Status',
+        'Break Details'
+      ];
+
+      const csvRows = [
+        header.join(','),
+        ...lastReportRows.map(row => [
+          csvEscape(row.member_name),
+          csvEscape(row.session_date),
+          csvEscape(formatDateTime(row.clock_in)),
+          csvEscape(formatDateTime(row.clock_out)),
+          csvEscape(String(row.total_break_minutes)),
+          csvEscape(typeof row.total_work_minutes === 'number' ? String(row.total_work_minutes) : '-'),
+          csvEscape(row.status),
+          csvEscape(row.break_details_text)
+        ].join(','))
+      ];
+
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const scope = els.reportScope.value;
+      const type = els.reportType.value;
+      const stamp = type === 'day' ? els.reportDate.value : els.reportMonth.value;
+      link.href = url;
+      link.download = `attendance_${scope}_${type}_${stamp}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    function csvEscape(value) {
+      const str = String(value ?? '');
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+
     function attachEvents() {
       els.loginBtn.addEventListener('click', loginMember);
       els.logoutBtn.addEventListener('click', logoutMember);
@@ -815,12 +1110,15 @@
       els.clockOutBtn.addEventListener('click', clockOut);
       els.firstBreakBtn.addEventListener('click', () => startBreak('First Break'));
       els.secondBreakBtn.addEventListener('click', () => startBreak('Second Break'));
-      els.thirdBreakBtn.addEventListener('click', () => startBreak('Third Break'));
       els.extraBreakBtn.addEventListener('click', () => startBreak('Extra Break'));
       els.endBreakBtn.addEventListener('click', endBreak);
       els.refreshBtn.addEventListener('click', refreshDashboard);
       els.addMemberBtn.addEventListener('click', addMember);
-      els.loadReportBtn.addEventListener('click', loadMonthlyReport);
+      els.deleteMemberBtn.addEventListener('click', deleteMember);
+      els.loadReportBtn.addEventListener('click', loadReport);
+      els.downloadReportBtn.addEventListener('click', downloadCSV);
+      els.reportScope.addEventListener('change', syncReportInputs);
+      els.reportType.addEventListener('change', syncReportInputs);
 
       els.memberPin.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') loginMember();
@@ -830,9 +1128,12 @@
     async function boot() {
       try {
         els.reportMonth.value = getCurrentMonthValue();
+        els.reportDate.value = getTodayLocalDate();
+
         await ensureAnonymousSession();
         await loadMembers();
         attachEvents();
+        syncReportInputs();
 
         const saved = loadSavedMember();
         if (saved) {
